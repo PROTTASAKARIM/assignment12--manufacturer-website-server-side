@@ -21,6 +21,7 @@ async function run() {
         await client.connect();
         const productCollection = client.db('manufacturer').collection('products');
         const orderCollection = client.db('manufacturer').collection('orders');
+        const reviewCollection = client.db('manufacturer').collection('reviews');
 
         app.get('/products', async (req, res) => {
             const query = {};
@@ -45,11 +46,22 @@ async function run() {
             const result = await orderCollection.insertOne(order);
             res.send({ success: true, result })
 
-        })
+        });
         app.get('/orders', async (req, res) => {
             const orderEmail = req.query.orderEmail;
             const query = { orderEmail: orderEmail };
             const orders = await orderCollection.find(query).toArray();
+            res.send(orders)
+        });
+        app.post('/reviews', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send({ success: true, result })
+
+        });
+        app.get('/reviews', async (req, res) => {
+            const query = {};
+            const orders = await reviewCollection.find(query).toArray();
             res.send(orders)
         });
 
