@@ -37,15 +37,21 @@ async function run() {
         });
         app.post('/orders', async (req, res) => {
             const order = req.body;
-            const query = { productId: order.productId }
-            const exists = await orderCollection.findOne(query);
-            if (exists) {
-                return res.send({ success: false, booking: exists })
-            }
+            // const query = { productId: order.productId, orderEmail: order.orderEmail }
+            // const exists = await orderCollection.findOne(query);
+            // if (exists) {
+            //     return res.send({ success: false, order: exists })
+            // }
             const result = await orderCollection.insertOne(order);
-            res.send(result)
+            res.send({ success: true, result })
 
         })
+        app.get('/orders', async (req, res) => {
+            const orderEmail = req.query.orderEmail;
+            const query = { orderEmail: orderEmail };
+            const orders = await orderCollection.find(query).toArray();
+            res.send(orders)
+        });
 
 
 
