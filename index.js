@@ -1,8 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 require('dotenv').config();
+
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -22,6 +25,7 @@ async function run() {
         const productCollection = client.db('manufacturer').collection('products');
         const orderCollection = client.db('manufacturer').collection('orders');
         const reviewCollection = client.db('manufacturer').collection('reviews');
+        const userCollection = client.db('manufacturer').collection('users');
 
         app.get('/products', async (req, res) => {
             const query = {};
@@ -49,6 +53,8 @@ async function run() {
         });
         app.get('/orders', async (req, res) => {
             const orderEmail = req.query.orderEmail;
+            const authorization = req.header.authorization;
+            console.log(authorization)
             const query = { orderEmail: orderEmail };
             const orders = await orderCollection.find(query).toArray();
             res.send(orders)
@@ -65,6 +71,33 @@ async function run() {
             res.send(orders)
         });
 
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            const secretToken = jwt.sign({ email: email }, process.env.ACCESS_SECRET_TOKEN, { expiresIn: '1h' })
+            res.send({ result, secretToken });
+        });
+
+        app.get('/user', async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
+        });
+
+        app.put('/user/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
 
 
 
