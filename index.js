@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 require('dotenv').config();
 
@@ -26,6 +27,21 @@ async function run() {
         const orderCollection = client.db('manufacturer').collection('orders');
         const reviewCollection = client.db('manufacturer').collection('reviews');
         const userCollection = client.db('manufacturer').collection('users');
+        const paymentCollection = client.db('manufacturer').collection('payments');
+
+
+        // const verifyAdmin = async (req, res, next) => {
+        //     const requester = req.decoded.email;
+        //     console.log(requester)
+        //     const requesterAccount = await userCollection.findOne({ email: requester });
+        //     if (requesterAccount.role === 'admin') {
+        //         next();
+        //     }
+        //     else {
+        //         res.status(403).send({ message: 'forbidden' });
+        //     }
+        // }
+
 
         app.get('/products', async (req, res) => {
             const query = {};
@@ -59,6 +75,28 @@ async function run() {
             const orders = await orderCollection.find(query).toArray();
             res.send(orders)
         });
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query);
+            res.send(order);
+        })
+        app.patch('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedOrder);
+        })
+
         app.post('/reviews', async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
@@ -99,6 +137,24 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const order = req.body;
+            const price = order.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
 
 
 
@@ -111,11 +167,10 @@ async function run() {
 run().catch(console.dir);
 
 
-
 app.get('/', (req, res) => {
-    res.send('Hello From Doctor Uncle own portal!')
+    res.send('Hello From Manufacture portal!')
 })
 
 app.listen(port, () => {
-    console.log(`Doctors App listening on port ${port}`)
+    console.log(`Manufacture listening on port ${port}`)
 })
