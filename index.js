@@ -71,6 +71,7 @@ async function run() {
             const product = await cursor.toArray();
             res.send(product);
         });
+
         app.post('/orders', async (req, res) => {
             const order = req.body;
             // const query = { productId: order.productId, orderEmail: order.orderEmail }
@@ -85,7 +86,6 @@ async function run() {
         app.get('/orders', async (req, res) => {
             const orderEmail = req.query.orderEmail;
             const authorization = req.header.authorization;
-            console.log(authorization)
             const query = { orderEmail: orderEmail };
             const orders = await orderCollection.find(query).toArray();
             res.send(orders)
