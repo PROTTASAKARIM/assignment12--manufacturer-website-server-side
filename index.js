@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 require('dotenv').config();
@@ -49,6 +50,13 @@ async function run() {
             const products = await cursor.toArray();
             res.send(products);
         });
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send({ success: true, result })
+
+        });
+
         app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -136,6 +144,21 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc);
             res.send(result);
         });
+        app.put('/user', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const updateDoc = {
+                $set: {
+                    address: user.address,
+                    education: user.education,
+                    phoneNo: user.phoneNo,
+                    linkedIn: user.linkedIn
+
+                },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
 
         app.get('/admin/:email', async (req, res) => {
             const email = req.params.email;
@@ -156,6 +179,11 @@ async function run() {
             res.send({ clientSecret: paymentIntent.client_secret })
         });
 
+        app.get('/create-payment-intent', async (req, res) => {
+
+            res.send(process.env.STRIPE_SECRET_KEY);
+
+        });
 
 
     }
