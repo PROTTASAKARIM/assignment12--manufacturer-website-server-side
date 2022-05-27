@@ -60,6 +60,13 @@ async function run() {
         app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
             const cursor = productCollection.find(query);
             const product = await cursor.toArray();
             res.send(product);
@@ -89,21 +96,30 @@ async function run() {
             const order = await orderCollection.findOne(query);
             res.send(order);
         })
-        app.patch('/orders/:id', async (req, res) => {
-            const id = req.params.id;
-            const payment = req.body;
-            const filter = { _id: ObjectId(id) };
-            const updatedDoc = {
-                $set: {
-                    paid: true,
-                    transactionId: payment.transactionId
-                }
-            }
-
-            const result = await paymentCollection.insertOne(payment);
-            const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
-            res.send(updatedOrder);
+        app.delete('/orders/:id', async (req, res) => {
+            const _id = req.body;
+            const query = { _id: ObjectId(_id) };
+            const order = await orderCollection.deleteOne(query);
+            res.send(order);
         })
+
+
+        // app.patch('/orders/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const payment = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const updatedDoc = {
+        //         $set: {
+        //             paid: true,
+        //             transactionId: payment.transactionId
+        //         }
+        //     }
+
+        //     const result = await paymentCollection.insertOne(payment);
+        //     const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
+        //     res.send(updatedOrder);
+        // })
+
 
         app.post('/reviews', async (req, res) => {
             const review = req.body;
@@ -165,25 +181,25 @@ async function run() {
             const user = await userCollection.findOne({ email: email });
             const isAdmin = user.role === 'admin';
             res.send({ admin: isAdmin })
-        })
-
-        app.post('/create-payment-intent', async (req, res) => {
-            const order = req.body;
-            const price = order.price;
-            const amount = price * 100;
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
-            });
-            res.send({ clientSecret: paymentIntent.client_secret })
         });
 
-        app.get('/create-payment-intent', async (req, res) => {
+        // app.post('/create-payment-intent', async (req, res) => {
+        //     const order = req.body;
+        //     const price = order.price;
+        //     const amount = price * 100;
+        //     const paymentIntent = await stripe.paymentIntents.create({
+        //         amount: amount,
+        //         currency: 'usd',
+        //         payment_method_types: ['card']
+        //     });
+        //     res.send({ clientSecret: paymentIntent.client_secret })
+        // });
 
-            res.send(process.env.STRIPE_SECRET_KEY);
+        // app.get('/create-payment-intent', async (req, res) => {
 
-        });
+        //     res.send(process.env.STRIPE_SECRET_KEY);
+
+        // });
 
 
     }
