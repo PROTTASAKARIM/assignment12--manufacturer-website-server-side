@@ -142,8 +142,7 @@ async function run() {
                 $set: user,
             };
             const result = await userCollection.updateOne(filter, updateDoc, options);
-            const secretToken = jwt.sign({ email: email }, process.env.ACCESS_SECRET_TOKEN, { expiresIn: '1h' })
-            res.send({ result, secretToken });
+            res.send({ result });
         });
 
         app.get('/user', async (req, res) => {
